@@ -28,6 +28,7 @@ const flashBtn = document.getElementById('flashBtn');
 const progressBar = document.getElementById('progressBar');
 const flashStatus = document.getElementById('flashStatus');
 const globalStatus = document.getElementById('globalStatus');
+const eraseAllCheckbox = document.getElementById('eraseAllCheckbox'); // <-- NEW
 
 // --- UI STATUS UTILS ---
 function showStatus(msg, type = 'error') {
@@ -38,7 +39,6 @@ function showStatus(msg, type = 'error') {
     }, 6000);
 }
 
-// Watch for abrupt physical disconnects from the OS
 navigator.serial.addEventListener("disconnect", (event) => {
     if (port && event.target === port) {
         handleAbruptDisconnect();
@@ -57,7 +57,6 @@ async function handleAbruptDisconnect() {
 }
 
 // --- SERIAL MONITOR LOGIC ---
-
 async function connect() {
     try {
         port = await navigator.serial.requestPort();
@@ -133,7 +132,6 @@ async function sendData() {
 }
 
 // --- FILE HANDLING ---
-
 function handleFileSelect(file) {
     if (!file || !file.name.endsWith('.bin')) {
         showStatus("❌ Please select a valid .bin firmware file.", "error");
@@ -154,11 +152,9 @@ dropZone.addEventListener('drop', (e) => {
 fileInput.addEventListener('change', (e) => handleFileSelect(e.target.files[0]));
 
 // --- FLASH LOGIC (ESPTOOL) ---
-
 async function flashFirmware() {
     if (!selectedFile || !port) return;
 
-    // 1. Cleanly stop the monitor and release the port so esptool can take over
     keepReading = false;
     if (reader) await reader.cancel().catch(() => {});
     if (readLoopPromise) await readLoopPromise.catch(() => {});
@@ -172,12 +168,11 @@ async function flashFirmware() {
     let transport;
     try {
         const fileBuffer = await selectedFile.arrayBuffer();
-        // second argument `true` enables esptool-js's internal tracing/logging
         transport = new Transport(port, true);
 
         const loaderOptions = {
             transport: transport,
-            baudrate: 115200, // keep this — 460800 caused packet drops on your board
+            baudrate: 115200, 
             terminal: {
                 clean: () => { terminal.value = ''; },
                 writeLine: (data) => {
@@ -193,16 +188,13 @@ async function flashFirmware() {
 
         const esploader = new ESPLoader(loaderOptions);
 
-        // main() alone connects, detects the chip, AND reads flash ID.
-        // Do NOT call flash_id() — it was removed in current esptool-js
-        // and calling it will always throw "is not a function".
         const chipName = await esploader.main();
         flashStatus.textContent = `Connected to ${chipName}. Erasing & Flashing...`;
 
         await esploader.writeFlash({
             fileArray: [{ data: new Uint8Array(fileBuffer), address: 0x10000 }],
             flashSize: 'keep',
-            eraseAll: false,
+            eraseAll: eraseAllCheckbox.checked, // <-- Maps UI state to esptool
             compress: true,
             reportProgress: (fileIndex, written, total) => {
                 const progress = (written / total) * 100;
@@ -222,7 +214,6 @@ async function flashFirmware() {
         showStatus("❌ Flash process failed.", "error");
     } finally {
         flashBtn.disabled = false;
-        // Clean up esptool's hold on the port and hand it back to the monitor
         if (transport) await transport.disconnect().catch(() => {});
         if (port) {
             try {
@@ -237,7 +228,6 @@ async function flashFirmware() {
 }
 
 // --- UTILS & LISTENERS ---
-
 function toggleUIState(connected) {
     connectBtn.disabled = connected;
     disconnectBtn.disabled = !connected;

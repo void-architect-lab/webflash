@@ -189,3 +189,20 @@ textarea#terminal {
     /* Removed width transition so it precisely reflects raw esptool chunks */
     transition: background-color 0.3s; 
 }
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+    color: #ccc;
+    cursor: pointer;
+    margin: 8px 0;
+}
+
+.checkbox-label input[type="checkbox"] {
+    accent-color: var(--accent-blue);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
