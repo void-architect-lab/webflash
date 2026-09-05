@@ -172,7 +172,7 @@ async function flashFirmware() {
 
         const loaderOptions = {
             transport: transport,
-            baudrate: 115200, 
+            baudrate: 230400, 
             terminal: {
                 clean: () => { terminal.value = ''; },
                 writeLine: (data) => {
