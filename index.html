@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- OpenGraph Meta Tags for Link Previews -->
+    <title>WebFlash</title>
+    <meta property="og:title" content="WebFlash">
+    <meta property="og:description" content="Flash and monitor ESP32/Arduino boards — no installs, no drivers">
+    <meta property="og:type" content="website">
+    
+    <!-- Lightweight SVG Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Global Status Banner (Hidden by default) -->
+        <div id="globalStatus" class="status-banner hidden"></div>
+
+        <div class="warning" id="browserWarning">
+            ⚠️ Works in Chrome or Edge desktop only (Web Serial API is not supported in Firefox/Safari or on mobile).
+        </div>
+
+        <header>
+            <div class="header-titles">
+                <h1>WebFlash</h1>
+                <p class="tagline">Flash and monitor ESP32/Arduino boards — no installs, no drivers</p>
+            </div>
+            <div class="controls">
+                <select id="baudRate">
+                    <option value="9600">9600</option>
+                    <option value="115200" selected>115200</option>
+                    <option value="460800">460800</option>
+                    <option value="921600">921600</option>
+                </select>
+                <button id="connectBtn" class="primary">Connect</button>
+                <button id="disconnectBtn" class="danger" disabled>Disconnect</button>
+            </div>
+        </header>
+
+        <section class="monitor-section">
+            <div class="section-header">
+                <h2>Serial Monitor</h2>
+                <div>
+                    <button id="clearBtn">Clear</button>
+                    <button id="downloadBtn">Download .txt</button>
+                </div>
+            </div>
+            <textarea id="terminal" readonly></textarea>
+            <div class="input-group">
+                <input type="text" id="serialInput" placeholder="Send command to device..." disabled>
+                <button id="sendBtn" disabled>Send</button>
+            </div>
+        </section>
+
+        <section class="flash-section">
+            <h2>Flash Firmware (.bin)</h2>
+            <div class="drop-zone" id="dropZone">
+                Drag & Drop a .bin file here or <input type="file" id="fileInput" accept=".bin">
+            </div>
+            <div class="flash-controls">
+                <span id="fileInfo">No file selected</span>
+                <button id="flashBtn" class="primary" disabled>Flash to ESP32</button>
+            </div>
+            <div class="progress-container">
+                <div id="progressBar" class="progress-bar"></div>
+            </div>
+            <p id="flashStatus"></p>
+        </section>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
