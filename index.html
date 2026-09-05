@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebFlash</title>
     <meta property="og:title" content="WebFlash">
-    <meta property="og:description" content="Flash and monitor ESP32/Arduino boards — no installs, no drivers">
+    <meta property="og:description" content="Flash and monitor ESP8266/ESP32 boards — no installs, no drivers">
     <meta property="og:type" content="website">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
     <link rel="stylesheet" href="style.css">
@@ -38,7 +38,11 @@
         <section class="monitor-section">
             <div class="section-header">
                 <h2>Serial Monitor</h2>
-                <div>
+                <div class="monitor-controls">
+                    <!-- NEW: Auto-scroll Checkbox -->
+                    <label class="autoscroll-label">
+                        <input type="checkbox" id="autoscrollCheckbox" checked> Auto-scroll
+                    </label>
                     <button id="clearBtn">Clear</button>
                     <button id="downloadBtn">Download .txt</button>
                 </div>
@@ -57,12 +61,9 @@
             </div>
             <div class="flash-controls">
                 <span id="fileInfo">No file selected</span>
-                
-                <!-- NEW: Erase Flash Checkbox -->
                 <label class="checkbox-label">
                     <input type="checkbox" id="eraseAllCheckbox"> Erase flash before writing (clears old data)
                 </label>
-                
                 <button id="flashBtn" class="primary" disabled>Flash to ESP32</button>
             </div>
             <div class="progress-container">

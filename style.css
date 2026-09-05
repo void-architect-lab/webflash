@@ -206,3 +206,25 @@ textarea#terminal {
     height: 16px;
     cursor: pointer;
 }
+
+.monitor-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.autoscroll-label {
+    font-size: 0.9em;
+    color: #ccc;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.autoscroll-label input[type="checkbox"] {
+    accent-color: var(--accent-blue);
+    cursor: pointer;
+    width: 14px;
+    height: 14px;
+}
