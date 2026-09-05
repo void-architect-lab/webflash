@@ -15,7 +15,7 @@
         <div id="globalStatus" class="status-banner hidden"></div>
 
         <div class="warning" id="browserWarning">
-            ⚠️ Works in Chrome or Edge desktop only (Web Serial API is not supported in Firefox/Safari or on mobile).
+            ⚠️ Works in Chrome or Edge desktop only.
         </div>
 
         <header>
@@ -39,7 +39,6 @@
             <div class="section-header">
                 <h2>Serial Monitor</h2>
                 <div class="monitor-controls">
-                    <!-- NEW: Auto-scroll Checkbox -->
                     <label class="autoscroll-label">
                         <input type="checkbox" id="autoscrollCheckbox" checked> Auto-scroll
                     </label>
@@ -61,9 +60,16 @@
             </div>
             <div class="flash-controls">
                 <span id="fileInfo">No file selected</span>
+                
+                <div class="offset-group">
+                    <label for="flashOffset">Offset:</label>
+                    <input type="text" id="flashOffset" value="0x10000" title="Flash memory address offset">
+                </div>
+
                 <label class="checkbox-label">
-                    <input type="checkbox" id="eraseAllCheckbox"> Erase flash before writing (clears old data)
+                    <input type="checkbox" id="eraseAllCheckbox"> Erase flash before writing
                 </label>
+                
                 <button id="flashBtn" class="primary" disabled>Flash to ESP32</button>
             </div>
             <div class="progress-container">

@@ -28,64 +28,47 @@ const flashBtn = document.getElementById('flashBtn');
 const progressBar = document.getElementById('progressBar');
 const flashStatus = document.getElementById('flashStatus');
 const globalStatus = document.getElementById('globalStatus');
-const eraseAllCheckbox = document.getElementById('eraseAllCheckbox'); // <-- NEW
+const eraseAllCheckbox = document.getElementById('eraseAllCheckbox');
+const autoscrollCheckbox = document.getElementById('autoscrollCheckbox');
+const flashOffsetInput = document.getElementById('flashOffset'); // <-- NEW
 
-// --- UI STATUS UTILS ---
 function showStatus(msg, type = 'error') {
     globalStatus.innerHTML = msg;
     globalStatus.className = `status-banner ${type}`;
-    setTimeout(() => {
-        globalStatus.className = 'status-banner hidden';
-    }, 6000);
+    setTimeout(() => { globalStatus.className = 'status-banner hidden'; }, 6000);
 }
 
 navigator.serial.addEventListener("disconnect", (event) => {
-    if (port && event.target === port) {
-        handleAbruptDisconnect();
-    }
+    if (port && event.target === port) handleAbruptDisconnect();
 });
 
 async function handleAbruptDisconnect() {
     showStatus("🔌 Device disconnected abruptly.", "error");
     keepReading = false;
-    
     if (reader) await reader.cancel().catch(() => {});
     if (readLoopPromise) await readLoopPromise.catch(() => {});
     port = null;
-    
     toggleUIState(false);
 }
 
-// --- SERIAL MONITOR LOGIC ---
 async function connect() {
     try {
         port = await navigator.serial.requestPort();
-        const baudRate = parseInt(baudRateSelect.value);
-        await port.open({ baudRate: baudRate });
-
+        await port.open({ baudRate: parseInt(baudRateSelect.value) });
         toggleUIState(true);
         keepReading = true;
         readLoopPromise = readLoop();
         showStatus("✅ Connected to device.", "success");
     } catch (e) {
-        console.error(e);
-        if (e.name === 'SecurityError' || e.message.includes('Permission denied')) {
-            showStatus("❌ Permission Denied: Another program is using the port.", "error");
-        } else if (e.name === 'NotFoundError') {
-            // User cancelled the prompt, do nothing.
-        } else {
-            showStatus(`❌ Connection failed: ${e.message}`, "error");
-        }
+        if (e.name !== 'NotFoundError') showStatus(`❌ Connection failed: ${e.message}`, "error");
     }
 }
 
 async function disconnect() {
     keepReading = false;
-    
     if (reader) await reader.cancel().catch(() => {});
     if (readLoopPromise) await readLoopPromise.catch(() => {});
     if (port) await port.close().catch(() => {});
-    
     port = null;
     toggleUIState(false);
 }
@@ -102,13 +85,17 @@ async function readLoop() {
                 if (done) break;
                 if (value) {
                     terminal.value += value;
-                    terminal.scrollTop = terminal.scrollHeight;
+                    // FIX: Prevent browser freeze by limiting buffer to 20,000 characters
+                    if (terminal.value.length > 20000) {
+                        terminal.value = terminal.value.substring(terminal.value.length - 20000);
+                    }
+                    if (autoscrollCheckbox.checked) {
+                        terminal.scrollTop = terminal.scrollHeight;
+                    }
                 }
             }
         } catch (error) {
-            if (error.name !== 'NetworkError' && error.name !== 'BreakError') {
-                console.error("Read loop error:", error);
-            }
+            if (error.name !== 'NetworkError' && error.name !== 'BreakError') console.error(error);
         } finally {
             reader.releaseLock();
         }
@@ -122,16 +109,14 @@ async function sendData() {
         const textEncoder = new TextEncoderStream();
         const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
         const writer = textEncoder.writable.getWriter();
-        
         await writer.write(serialInput.value + "\r\n");
         await writer.close();
         serialInput.value = '';
     } catch (e) {
-        showStatus("❌ Failed to send command to device.", "error");
+        showStatus("❌ Failed to send.", "error");
     }
 }
 
-// --- FILE HANDLING ---
 function handleFileSelect(file) {
     if (!file || !file.name.endsWith('.bin')) {
         showStatus("❌ Please select a valid .bin firmware file.", "error");
@@ -151,9 +136,15 @@ dropZone.addEventListener('drop', (e) => {
 });
 fileInput.addEventListener('change', (e) => handleFileSelect(e.target.files[0]));
 
-// --- FLASH LOGIC (ESPTOOL) ---
 async function flashFirmware() {
     if (!selectedFile || !port) return;
+
+    // Validate the offset input
+    const flashAddress = parseInt(flashOffsetInput.value, 16);
+    if (isNaN(flashAddress)) {
+        showStatus("❌ Invalid offset address. Please use hexadecimal format (e.g., 0x1000).", "error");
+        return;
+    }
 
     keepReading = false;
     if (reader) await reader.cancel().catch(() => {});
@@ -172,29 +163,29 @@ async function flashFirmware() {
 
         const loaderOptions = {
             transport: transport,
-            baudrate: 115200, 
+            baudrate: 115200,
             terminal: {
                 clean: () => { terminal.value = ''; },
                 writeLine: (data) => {
                     terminal.value += data + '\n';
-                    terminal.scrollTop = terminal.scrollHeight;
+                    if (autoscrollCheckbox.checked) terminal.scrollTop = terminal.scrollHeight;
                 },
                 write: (data) => {
                     terminal.value += data;
-                    terminal.scrollTop = terminal.scrollHeight;
+                    if (autoscrollCheckbox.checked) terminal.scrollTop = terminal.scrollHeight;
                 }
             }
         };
 
         const esploader = new ESPLoader(loaderOptions);
-
         const chipName = await esploader.main();
         flashStatus.textContent = `Connected to ${chipName}. Erasing & Flashing...`;
 
+        // FIX: Use dynamic offset defined by the UI
         await esploader.writeFlash({
-            fileArray: [{ data: new Uint8Array(fileBuffer), address: 0x10000 }],
+            fileArray: [{ data: new Uint8Array(fileBuffer), address: flashAddress }],
             flashSize: 'keep',
-            eraseAll: eraseAllCheckbox.checked, // <-- Maps UI state to esptool
+            eraseAll: eraseAllCheckbox.checked,
             compress: true,
             reportProgress: (fileIndex, written, total) => {
                 const progress = (written / total) * 100;
@@ -227,7 +218,6 @@ async function flashFirmware() {
     }
 }
 
-// --- UTILS & LISTENERS ---
 function toggleUIState(connected) {
     connectBtn.disabled = connected;
     disconnectBtn.disabled = !connected;
